@@ -14,11 +14,9 @@ interface ExperienceProps {
   mode: SceneMode;
   handPosition: { x: number; y: number; detected: boolean } | null;
   uploadedPhotos: string[];
-  twoHandsDetected: boolean;
-  onClosestPhotoChange: (photoUrl: string | null) => void;
 }
 
-export const Experience: React.FC<ExperienceProps> = ({ mode, handPosition, uploadedPhotos, twoHandsDetected, onClosestPhotoChange }) => {
+export const Experience: React.FC<ExperienceProps> = ({ mode, handPosition, uploadedPhotos }) => {
   const controlsRef = useRef<any>(null);
 
   // Target distance for camera based on mode
@@ -29,9 +27,11 @@ export const Experience: React.FC<ExperienceProps> = ({ mode, handPosition, uplo
     if (controlsRef.current) {
       const controls = controlsRef.current;
       
-      // Update target distance based on mode - Move to 35 in CHAOS
+      // Update target distance based on mode.
+      // Zooming out uses a gentler damping so transition feels smoother.
       const targetDist = mode === SceneMode.CHAOS ? 35 : 15;
-      targetDistanceRef.current = THREE.MathUtils.lerp(targetDistanceRef.current, targetDist, delta * 2);
+      const zoomDamping = targetDist > targetDistanceRef.current ? 1.2 : 2.1;
+      targetDistanceRef.current = THREE.MathUtils.damp(targetDistanceRef.current, targetDist, zoomDamping, delta);
 
       if (handPosition && handPosition.detected) {
         // Map hand position to spherical coordinates
@@ -50,27 +50,31 @@ export const Experience: React.FC<ExperienceProps> = ({ mode, handPosition, uplo
         if (azimuthDiff > Math.PI) azimuthDiff -= Math.PI * 2;
         if (azimuthDiff < -Math.PI) azimuthDiff += Math.PI * 2;
         
-        const lerpSpeed = 8;
-        const newAzimuth = currentAzimuth + azimuthDiff * delta * lerpSpeed;
-        const newPolar = currentPolar + (targetPolar - currentPolar) * delta * lerpSpeed;
+        const angleSmooth = 1 - Math.exp(-delta * 6);
+        const newAzimuth = currentAzimuth + azimuthDiff * angleSmooth;
+        const newPolar = currentPolar + (targetPolar - currentPolar) * angleSmooth;
         
         // Use the dynamic targetDistanceRef
         const radius = targetDistanceRef.current;
-        const targetY = 4;
+        const targetY = 0; // Centered vertically
         
         const x = radius * Math.sin(newPolar) * Math.sin(newAzimuth);
         const y = targetY + radius * Math.cos(newPolar);
         const z = radius * Math.sin(newPolar) * Math.cos(newAzimuth);
         
-        controls.object.position.set(x, y, z);
+        const desiredPosition = new THREE.Vector3(x, y, z);
+        const positionSmooth = 1 - Math.exp(-delta * 7);
+        controls.object.position.lerp(desiredPosition, positionSmooth);
         controls.target.set(0, targetY, 0);
         controls.update();
       } else {
-        // Even when no hand detected, smoothly update distance
+        // Even when no hand detected, smoothly update distance and target
         const currentRadius = controls.getDistance();
-        if (Math.abs(currentRadius - targetDistanceRef.current) > 0.1) {
-          const ratio = targetDistanceRef.current / currentRadius;
-          controls.object.position.multiplyScalar(ratio);
+        if (Math.abs(currentRadius - targetDistanceRef.current) > 0.1 || controls.target.y !== 0) {
+          const desiredPosition = controls.object.position.clone().normalize().multiplyScalar(targetDistanceRef.current);
+          const smooth = 1 - Math.exp(-delta * 5);
+          controls.object.position.lerp(desiredPosition, smooth);
+          controls.target.lerp(new THREE.Vector3(0, 0, 0), smooth);
           controls.update();
         }
       }
@@ -108,7 +112,7 @@ export const Experience: React.FC<ExperienceProps> = ({ mode, handPosition, uplo
       <group position={[0, -5, 0]}>
         <Foliage mode={mode} count={12000} />
         <Ornaments mode={mode} count={600} />
-        <Polaroids mode={mode} uploadedPhotos={uploadedPhotos} twoHandsDetected={twoHandsDetected} onClosestPhotoChange={onClosestPhotoChange} />
+        <Polaroids mode={mode} uploadedPhotos={uploadedPhotos} />
         <CakeTopper mode={mode} />
         
         {/* Floor Reflections */}

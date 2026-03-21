@@ -8,9 +8,10 @@ interface GestureControllerProps {
   currentMode: SceneMode;
   onHandPosition?: (x: number, y: number, detected: boolean) => void;
   onTwoHandsDetected?: (detected: boolean) => void;
+  onHandRotation?: (angle: number, detected: boolean) => void;
 }
 
-export const GestureController: React.FC<GestureControllerProps> = ({ onModeChange, currentMode, onHandPosition, onTwoHandsDetected }) => {
+export const GestureController: React.FC<GestureControllerProps> = ({ onModeChange, currentMode, onHandPosition, onTwoHandsDetected, onHandRotation }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isLoaded, setIsLoaded] = useState(false);
@@ -174,6 +175,9 @@ export const GestureController: React.FC<GestureControllerProps> = ({ onModeChan
             if (onTwoHandsDetected) {
               onTwoHandsDetected(false);
             }
+            if (onHandRotation) {
+              onHandRotation(0, false);
+            }
             // Clear canvas when no hand detected
             if (canvasRef.current) {
               const ctx = canvasRef.current.getContext('2d');
@@ -208,6 +212,13 @@ export const GestureController: React.FC<GestureControllerProps> = ({ onModeChan
       setHandPos({ x: palmCenterX, y: palmCenterY });
       if (onHandPosition) {
         onHandPosition(palmCenterX, palmCenterY, true);
+      }
+
+      const indexMcp = landmarks[5];
+      const pinkyMcp = landmarks[17];
+      const palmAngle = Math.atan2(pinkyMcp.y - indexMcp.y, pinkyMcp.x - indexMcp.x);
+      if (onHandRotation) {
+        onHandRotation(palmAngle, true);
       }
       
       const fingerTips = [8, 12, 16, 20];

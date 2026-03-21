@@ -22,13 +22,9 @@ import { SceneMode } from '../types';
  * ==================================================================================
  */
 
-const PHOTO_COUNT = 22; // How many polaroid frames to generate
-
 interface PolaroidsProps {
   mode: SceneMode;
   uploadedPhotos: string[];
-  twoHandsDetected: boolean;
-  onClosestPhotoChange?: (photoUrl: string | null) => void;
 }
 
 interface PhotoData {
@@ -39,7 +35,7 @@ interface PhotoData {
   speed: number;
 }
 
-const PolaroidItem: React.FC<{ data: PhotoData; mode: SceneMode; index: number }> = ({ data, mode, index }) => {
+const PolaroidItem: React.FC<{ data: PhotoData; mode: SceneMode }> = ({ data, mode }) => {
   const groupRef = useRef<THREE.Group>(null);
   const [texture, setTexture] = useState<THREE.Texture | null>(null);
   const [error, setError] = useState(false);
@@ -107,13 +103,11 @@ const PolaroidItem: React.FC<{ data: PhotoData; mode: SceneMode; index: number }
         
     } else {
         // Chaos mode - face toward camera with gentle floating
-        // Camera position relative to scene group: [0, 9, 20]
-        const cameraPos = new THREE.Vector3(0, 9, 20);
         const dummy = new THREE.Object3D();
         dummy.position.copy(groupRef.current.position);
         
         // Make photos face the camera
-        dummy.lookAt(cameraPos);
+        dummy.lookAt(state.camera.position);
         
         // Smoothly rotate to face camera
         groupRef.current.quaternion.slerp(dummy.quaternion, delta * 3);
@@ -178,9 +172,8 @@ const PolaroidItem: React.FC<{ data: PhotoData; mode: SceneMode; index: number }
   );
 };
 
-export const Polaroids: React.FC<PolaroidsProps> = ({ mode, uploadedPhotos, twoHandsDetected, onClosestPhotoChange }) => {
+export const Polaroids: React.FC<PolaroidsProps> = ({ mode, uploadedPhotos }) => {
   const groupRef = useRef<THREE.Group>(null);
-  const [closestPhotoIndex, setClosestPhotoIndex] = React.useState<number>(0);
 
   const photoData = useMemo(() => {
     // Don't render any photos if none are uploaded
@@ -219,21 +212,20 @@ export const Polaroids: React.FC<PolaroidsProps> = ({ mode, uploadedPhotos, twoH
         r * Math.sin(theta)
       );
 
-      // 2. Chaos Position - Spread out and closer to camera
-      // Camera is at [0, 4, 20], Scene group offset is [0, -5, 0]
-      // So relative to scene, camera is at y=9
-      const relativeY = 5; // Lower position for better visibility
-      const relativeZ = 20; // Camera Z
-      
-      // Create positions spread widely around camera, very close
-      const angle = (i / count) * Math.PI * 2; // Distribute evenly
-      const distance = 3 + Math.random() * 4; // Distance 3-7 units (very close)
-      const heightSpread = (Math.random() - 0.5) * 8; // Height variation -4 to +4 (more spread)
-      
+      // 2. Chaos Position - Distributed on a sphere for zoomed-out reveal
+      const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+      const t = count === 1 ? 0.5 : i / (count - 1);
+      const sphereY = 1 - t * 2; // 1 -> -1
+      const ringRadius = Math.sqrt(Math.max(0, 1 - sphereY * sphereY));
+      const thetaSphere = goldenAngle * i;
+      const sphereCenter = new THREE.Vector3(0, 5, 0);
+      const sphereRadius = 14;
+      const jitter = 0.6;
+
       const chaosPos = new THREE.Vector3(
-        distance * Math.cos(angle) * 1.2, // X spread wider
-        relativeY + heightSpread, // More vertical spread
-        relativeZ - 4 + distance * Math.sin(angle) * 0.5 // Very close to camera (Z ~16-19)
+        sphereCenter.x + Math.cos(thetaSphere) * ringRadius * sphereRadius + (Math.random() - 0.5) * jitter,
+        sphereCenter.y + sphereY * sphereRadius + (Math.random() - 0.5) * jitter,
+        sphereCenter.z + Math.sin(thetaSphere) * ringRadius * sphereRadius + (Math.random() - 0.5) * jitter
       );
 
       data.push({
@@ -241,54 +233,17 @@ export const Polaroids: React.FC<PolaroidsProps> = ({ mode, uploadedPhotos, twoH
         url: uploadedPhotos[i],
         chaosPos,
         targetPos,
-        speed: 0.8 + Math.random() * 1.5 // Variable speed
+        speed: 1.1 + Math.random() * 1.3 // Variable speed
       });
     }
     return data;
   }, [uploadedPhotos]);
-
-  // Update closest photo every frame when two hands are detected
-  useFrame((state) => {
-    if (twoHandsDetected && groupRef.current && photoData.length > 0) {
-      // Get camera position in world coordinates
-      const cameraPos = state.camera.position.clone();
-      
-      let minDistance = Infinity;
-      let closestIndex = 0;
-      
-      // Check each photo's actual world position
-      groupRef.current.children.forEach((child, i) => {
-        if (i < photoData.length) {
-          // Get world position of the photo
-          const worldPos = new THREE.Vector3();
-          child.getWorldPosition(worldPos);
-          
-          const distance = worldPos.distanceTo(cameraPos);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestIndex = i;
-          }
-        }
-      });
-      
-      setClosestPhotoIndex(closestIndex);
-      
-      // Notify parent component about the closest photo
-      if (onClosestPhotoChange) {
-        onClosestPhotoChange(uploadedPhotos[closestIndex]);
-      }
-    } else if (onClosestPhotoChange) {
-      // Clear the overlay when two hands are not detected
-      onClosestPhotoChange(null);
-    }
-  });
 
   return (
     <group ref={groupRef}>
       {photoData.map((data, i) => (
         <PolaroidItem 
           key={i} 
-          index={i} 
           data={data} 
           mode={mode}
         />
