@@ -157,7 +157,7 @@ export default function App() {
 					color: ["#93C5FD", "#BAE6FD", "#60A5FA", "#BFDBFE", "#DBEAFE"][i % 5],
 				};
 			}),
-		[]
+		[],
 	);
 
 	const sparkleDecor = useMemo(
@@ -170,7 +170,7 @@ export default function App() {
 				duration: 1.8 + seeded(i + 191) * 2.6,
 				delay: -(seeded(i + 211) * 4),
 			})),
-		[]
+		[],
 	);
 
 	const petalDecor = useMemo(
@@ -183,7 +183,7 @@ export default function App() {
 				delay: -(seeded(i + 341) * 12),
 				opacity: 0.25 + seeded(i + 371) * 0.5,
 			})),
-		[]
+		[],
 	);
 
 	return (
@@ -311,7 +311,8 @@ export default function App() {
 											width: `${balloon.size}px`,
 											height: `${balloon.size * 1.24}px`,
 											backgroundColor: balloon.color,
-											boxShadow: "inset -6px -8px 14px rgba(0,0,0,0.12), 0 8px 20px rgba(255,255,255,0.5)",
+											boxShadow:
+												"inset -6px -8px 14px rgba(0,0,0,0.12), 0 8px 20px rgba(255,255,255,0.5)",
 										}}
 									/>
 									<div className="w-[1px] h-10 bg-white/60" />
@@ -320,7 +321,13 @@ export default function App() {
 						))}
 					</div>
 
-					<div className="relative w-[88vw] max-w-md aspect-[3/4.6] bg-white/72 backdrop-blur-xl border border-white/80 shadow-[0_24px_90px_rgba(59,130,246,0.28)] rounded-[2.8rem] p-10 flex flex-col items-center justify-between text-center overflow-hidden">
+					<div
+						className="relative w-[88vw] max-w-md aspect-[3/4.6] backdrop-blur-xl border border-[#DBEAFE] shadow-[0_24px_90px_rgba(59,130,246,0.28)] rounded-[2.8rem] p-10 flex flex-col items-center justify-between text-center overflow-hidden"
+						style={{
+							background:
+								"linear-gradient(160deg, rgba(224,242,254,0.92) 0%, rgba(191,219,254,0.88) 55%, rgba(186,230,253,0.84) 100%)",
+						}}
+					>
 						<div className="absolute inset-0 pointer-events-none">
 							<div
 								className="absolute -inset-[110%]"
