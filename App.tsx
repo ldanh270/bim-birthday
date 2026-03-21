@@ -376,7 +376,7 @@ export default function App() {
 							<div className="w-20 h-[2px] bg-gradient-to-r from-transparent via-[#60A5FA] to-transparent mb-6"></div>
 
 							<p className="text-[#475569] font-serif text-lg italic leading-relaxed max-w-[260px] select-none">
-								"Chúc cậu có một ngày sinh nhật thật ngọt ngào, tỏa sáng và đầy yêu thương."
+								"Chúc bim iu có một ngày sinh nhật thật ngọt ngào, tỏa sáng và đầy yêu thương."
 							</p>
 						</div>
 
