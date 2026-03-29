@@ -1,4 +1,4 @@
-import React, { useState, Suspense, useEffect, useMemo } from "react";
+import React, { useState, Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Loader } from "@react-three/drei";
 import { Experience } from "./components/Experience";
@@ -55,14 +55,17 @@ export default function App() {
 	});
 	// Default to the actual photos in public/photos
 	const [uploadedPhotos, setUploadedPhotos] = useState<string[]>([
-		"/photos/IMG_1686058167670_1687187842924.jpg",
-		"/photos/IMG_20230606_210506.jpg",
-		"/photos/IMG_20241002_234703_014.jpg",
-		"/photos/IMG_20241002_234705_668.jpg",
-		"/photos/received_1041058090472192.jpeg",
-		"/photos/received_1130687188353927.jpeg",
-		"/photos/received_1481050892477044.jpeg",
-		"/photos/received_419739320666904 - Copy.jpeg",
+		"/photos/IMG_1686058167670_1687187842924.jpeg",
+		"/photos/received_555805509791306.jpeg",
+		"/photos/IMG_1766766953536_1766766967910.jpeg",
+		"/photos/IMG_1767183254426_1767183258617.jpeg",
+		"/photos/IMG_1771044312014_1771044330902.jpeg",
+		"/photos/IMG_1771044312028_1771044331553.jpeg",
+		"/photos/Locket_1771897171184_77.jpeg",
+		"/photos/Messenger_creation_385737044629531.jpeg",
+		"/photos/Messenger_creation_1593363957956257.jpeg",
+		"/photos/Messenger_creation_1818593485554210.jpeg",
+		"/photos/Messenger_creation_CBFD03ED-7AD8-4A92-9CA8-7983BA73B1D0.jpeg",
 		"/photos/received_555805509791306.jpeg",
 		"/photos/received_572765741125531.jpeg",
 		"/photos/received_613394867173208.jpeg",
@@ -75,55 +78,25 @@ export default function App() {
 		"/photos/received_859086068654099.jpeg",
 		"/photos/received_894174548535747.jpeg",
 		"/photos/received_962633061060995.jpeg",
+		"/photos/received_1041058090472192.jpeg",
+		"/photos/received_1130687188353927.jpeg",
+		"/photos/received_1481050892477044.jpeg",
 	]);
 	const [isLoadingShare, setIsLoadingShare] = useState(false);
 	const [isSharedView, setIsSharedView] = useState(false);
 	const [isOpened, setIsOpened] = useState(false);
 
-	// Check for share parameter in URL on mount
+	const audioRef = useRef<HTMLAudioElement>(null);
+
 	useEffect(() => {
-		// Disabled loadSharedPhotos effect as per "tắt chế độ tự thêm đi"
-		/*
-    const loadSharedPhotos = async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const shareId = urlParams.get('share');
+		// Thử phát nhạc ngay khi trang load
+		const playAudio = () => {
+			audioRef?.current?.play().catch((error) => {
+				console.log("Trình duyệt chặn tự phát âm thanh:", error);
+			});
+		};
 
-      if (!shareId) return;
-
-      setIsSharedView(true);
-      setIsLoadingShare(true);
-
-      try {
-        // Try API first (works in vercel dev and production)
-        try {
-          const response = await fetch(`/api/share?id=${shareId}`);
-          const data = await response.json();
-
-          if (response.ok && data.success) {
-            setUploadedPhotos(data.images);
-            return;
-          }
-        } catch (apiError) {
-          console.log('API not available, trying localStorage fallback');
-        }
-
-        // Fallback to localStorage if API fails (pure vite dev mode)
-        const shareDataStr = localStorage.getItem(`share_${shareId}`);
-        if (shareDataStr) {
-          const shareData = JSON.parse(shareDataStr);
-          setUploadedPhotos(shareData.images);
-        } else {
-          console.error('Share not found');
-        }
-      } catch (error) {
-        console.error('Error loading shared photos:', error);
-      } finally {
-        setIsLoadingShare(false);
-      }
-    };
-
-    loadSharedPhotos();
-    */
+		playAudio();
 	}, []);
 
 	const toggleMode = () => {
@@ -226,6 +199,12 @@ export default function App() {
 					50% { transform: translateY(-8px); }
 				}
 			`}</style>
+
+			<audio
+				ref={audioRef}
+				src="/song.mp3"
+				loop
+			/>
 
 			{/* Invitation Card Overlay */}
 			<div
