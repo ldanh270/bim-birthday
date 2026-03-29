@@ -86,18 +86,8 @@ export default function App() {
 	const [isSharedView, setIsSharedView] = useState(false);
 	const [isOpened, setIsOpened] = useState(false);
 
-	const audioRef = useRef<HTMLAudioElement>(null);
-
-	useEffect(() => {
-		// Thử phát nhạc ngay khi trang load
-		const playAudio = () => {
-			audioRef?.current?.play().catch((error) => {
-				console.log("Trình duyệt chặn tự phát âm thanh:", error);
-			});
-		};
-
-		playAudio();
-	}, []);
+	const [hasInteracted, setHasInteracted] = useState(false);
+	const audioRef = useRef(new Audio("/song.mp3"));
 
 	const toggleMode = () => {
 		setMode((prev) => (prev === SceneMode.FORMED ? SceneMode.CHAOS : SceneMode.FORMED));
@@ -159,6 +149,11 @@ export default function App() {
 		[],
 	);
 
+	const handleStart = () => {
+		audioRef.current?.play();
+		setHasInteracted(true);
+	};
+
 	return (
 		<div className="w-full h-screen relative bg-gradient-to-b from-[#E0F2FE] via-[#BAE6FD] to-[#7DD3FC] overflow-hidden">
 			<style>{`
@@ -200,11 +195,12 @@ export default function App() {
 				}
 			`}</style>
 
-			<audio
+			{/* <audio
 				ref={audioRef}
 				src="/song.mp3"
 				loop
-			/>
+				muted
+			/> */}
 
 			{/* Invitation Card Overlay */}
 			<div
@@ -364,9 +360,12 @@ export default function App() {
 							className="group relative pointer-events-auto px-12 py-4 overflow-hidden rounded-full bg-gradient-to-r from-[#60A5FA] to-[#38BDF8] transition-all duration-500 hover:shadow-[0_14px_34px_rgba(59,130,246,0.45)] hover:-translate-y-1 active:scale-95"
 							style={{ boxShadow: "0 10px 24px rgba(59,130,246,0.35)" }}
 						>
-							<span className="relative z-10 text-white font-serif tracking-[0.2em] text-sm font-bold">
+							<button
+								onClick={handleStart}
+								className="relative z-10 text-white font-serif tracking-[0.2em] text-sm font-bold"
+							>
 								Open Gift ✨
-							</span>
+							</button>
 							<div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-500" />
 						</button>
 
